@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Employee Management System</title>
+<style>
+  body { font-family: Arial, sans-serif; background: #f4f6f8; margin: 0; padding: 2rem; }
+  h1 { color: #1f3864; }
+  table { width: 100%; border-collapse: collapse; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+  th, td { padding: 0.75rem; text-align: left; border-bottom: 1px solid #e0e0e0; }
+  th { background: #1f3864; color: #fff; }
+  form { background: #fff; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+  input { display: block; margin-bottom: 0.75rem; padding: 0.5rem; width: 100%; max-width: 300px; box-sizing: border-box; }
+  button { background: #1f3864; color: #fff; border: none; padding: 0.6rem 1.2rem; cursor: pointer; }
+  button:hover { background: #16294d; }
+  .delete-btn { background: #b02a2a; }
+  .delete-btn:hover { background: #8a2020; }
+</style>
+</head>
+<body>
+
+<h1>Employee Management System</h1>
+
+<form id="employee-form">
+  <h3>Add Employee</h3>
+  <input type="text" id="name" placeholder="Full Name" required>
+  <input type="text" id="department" placeholder="Department" required>
+  <input type="text" id="designation" placeholder="Designation" required>
+  <input type="number" id="salary" placeholder="Salary" required>
+  <input type="email" id="email" placeholder="Email" required>
+  <button type="submit">Add Employee</button>
+</form>
+
+<table>
+  <thead>
+    <tr>
+      <th>ID</th><th>Name</th><th>Department</th><th>Designation</th><th>Salary</th><th>Email</th><th>Action</th>
+    </tr>
+  </thead>
+  <tbody id="employee-table-body"></tbody>
+</table>
+
+<script>
+  // Points to the backend running behind the ALB.
+  // Update this to your ALB DNS name once deployed, e.g.:
+  // const API_BASE = "http://ems-alb-123456789.ap-south-1.elb.amazonaws.com/api/employees";
+  const API_BASE = "http://localhost:8080/api/employees";
+
+  async function loadEmployees() {
+    const res = await fetch(API_BASE);
+    const employees = await res.json();
+    const tbody = document.getElementById("employee-table-body");
+    tbody.innerHTML = "";
+    employees.forEach(emp => {
+      const row = document.createElement("tr");
+      row.innerHTML = `
+        <td>${emp.id}</td>
+        <td>${emp.name}</td>
+        <td>${emp.department}</td>
+        <td>${emp.designation}</td>
+        <td>${emp.salary}</td>
+        <td>${emp.email}</td>
+        <td><button class="delete-btn" onclick="deleteEmployee(${emp.id})">Delete</button></td>
+      `;
+      tbody.appendChild(row);
+    });
+  }
+
+  async function deleteEmployee(id) {
+    await fetch(`${API_BASE}/${id}`, { method: "DELETE" });
+    loadEmployees();
+  }
+
+  document.getElementById("employee-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const employee = {
+      name: document.getElementById("name").value,
+      department: document.getElementById("department").value,
+      designation: document.getElementById("designation").value,
+      salary: parseFloat(document.getElementById("salary").value),
+      email: document.getElementById("email").value
+    };
+    await fetch(API_BASE, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(employee)
+    });
+    e.target.reset();
+    loadEmployees();
+  });
+
+  loadEmployees();
+</script>
+
+</body>
+</html>
